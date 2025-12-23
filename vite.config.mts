@@ -1,7 +1,9 @@
+import './setup-env'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { config as dotenvConfig } from 'dotenv'
+
 import type { IncomingMessage, ServerResponse } from 'http'
 import { Readable } from 'stream'
 import type { ReadableStream as NodeReadableStream } from 'stream/web'
@@ -14,7 +16,7 @@ import typegpuPlugin from 'unplugin-typegpu/vite'
 import { defineConfig } from 'vite'
 import type { ProxyOptions, UserConfig } from 'vite'
 import { createHtmlPlugin } from 'vite-plugin-html'
-import vueDevTools from 'vite-plugin-vue-devtools'
+// import vueDevTools from 'vite-plugin-vue-devtools'
 
 import { comfyAPIPlugin } from './build/plugins'
 
@@ -233,7 +235,7 @@ export default defineConfig({
 
   plugins: [
     ...(!DISABLE_VUE_PLUGINS
-      ? [vueDevTools(), vue(), createHtmlPlugin({})]
+      ? [/*vueDevTools(),*/ vue(), createHtmlPlugin({})]
       : [vue()]),
     tailwindcss(),
     typegpuPlugin({}),

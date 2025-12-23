@@ -54,6 +54,13 @@ const router = createRouter({
           name: 'GraphView',
           component: () => import('@/views/GraphView.vue'),
           beforeEnter: async (_to, _from, next) => {
+            // Check custom auth state first
+            const { useCurrentUser } = await import('@/composables/auth/useCurrentUser')
+            const { isLoggedIn } = useCurrentUser()
+            if (!isLoggedIn.value) {
+              return next({ name: 'Login' })
+            }
+
             // Then check user store
             const userStore = useUserStore()
             await userStore.initialize()
@@ -63,6 +70,11 @@ const router = createRouter({
               next()
             }
           }
+        },
+        {
+          path: 'login',
+          name: 'Login',
+          component: () => import('@/views/LoginView.vue')
         },
         {
           path: 'user-select',

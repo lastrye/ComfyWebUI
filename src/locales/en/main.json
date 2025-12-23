@@ -818,6 +818,7 @@
     "theme": "Theme",
     "dark": "Dark",
     "light": "Light",
+    "lock": "Lock",
     "manageExtensions": "Manage Extensions",
     "customNodesManager": "Custom Nodes Manager",
     "settings": "Settings",

@@ -110,6 +110,8 @@ import { useI18n } from 'vue-i18n'
 
 import SettingDialogHeader from '@/components/dialog/header/SettingDialogHeader.vue'
 import ComfyLogo from '@/components/icons/ComfyLogo.vue'
+import { useCurrentUser } from '@/composables/auth/useCurrentUser'
+import { useLockScreen } from '@/composables/useLockScreen'
 import { useWorkflowTemplateSelectorDialog } from '@/composables/useWorkflowTemplateSelectorDialog'
 import SettingDialogContent from '@/platform/settings/components/SettingDialogContent.vue'
 import { useSettingStore } from '@/platform/settings/settingStore'
@@ -132,6 +134,9 @@ const colorPaletteService = useColorPaletteService()
 const dialogStore = useDialogStore()
 const managerState = useManagerState()
 const settingStore = useSettingStore()
+
+const { isLoggedIn, handleSignOut } = useCurrentUser()
+const { lock } = useLockScreen()
 
 const menuRef = ref<
   ({ dirty: boolean } & TieredMenuMethods & TieredMenuState) | null
@@ -209,7 +214,6 @@ const extraMenuItems = computed(() => [
     key: 'nodes-2.0-toggle',
     label: 'Nodes 2.0'
   },
-  { separator: true },
   {
     key: 'browse-templates',
     label: t('menuLabels.Browse Templates'),
@@ -232,6 +236,26 @@ const extraMenuItems = computed(() => [
     label: t('menu.manageExtensions'),
     icon: 'mdi mdi-puzzle-outline',
     command: showManageExtensions
+  },
+  { separator: true },
+  {
+    key: 'lock-screen',
+    label: t('menu.lock'),
+    icon: 'pi pi-lock',
+    visible: isLoggedIn.value,
+    command: () => {
+      // Lock screen logic
+      lock()
+    }
+  },
+  {
+    key: 'logout',
+    label: t('auth.signOut.signOut'),
+    icon: 'pi pi-sign-out',
+    visible: isLoggedIn.value,
+    command: async () => {
+      await handleSignOut()
+    }
   }
 ])
 

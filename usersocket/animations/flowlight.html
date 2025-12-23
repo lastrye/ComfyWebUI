@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Precision Fiber Optic Flow - Flashing Photons</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            pointer-events: none;
+            transition: opacity 0.5s;
+            text-align: center;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #0044ff; /* 蓝色边框 */
+            box-shadow: 0 0 20px rgba(0, 100, 255, 0.3);
+        }
+        .ui-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255,255,255,0.4);
+            font-size: 12px;
+            pointer-events: none;
+            user-select: none;
+            text-shadow: 0 0 5px rgba(0,100,255,0.5);
+        }
+    </style>
+    <!-- Import Map for Three.js v0.160.0 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://registry.npmmirror.com/three/0.160.0/files/build/three.module.js",
+                "three/addons/": "https://registry.npmmirror.com/three/0.160.0/files/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="loading">正在注入高能光子流...<br><span style="font-size:10px; opacity:0.6">增强光子增益 (200%)</span></div>
+    <div class="ui-overlay">HIGH ENERGY PHOTONS // V.12.0</div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- 配置参数 ---
+        const CONFIG = {
+            fiberCount: 600,           
+            fiberRangeX: 50,           
+            
+            // 玻璃管参数
+            outerRadius: 0.08,         
+            innerRadius: 0.04,         
+            
+            tubeSegments: 80,          
+            radialSegments: 4,         
+            
+            photonCount: 6000,         
+            photonSize: 0.035,
+            
+            // 材质基础参数
+            glassColor: 0x88ccff,      
+            glassOpacity: 0.25,        
+            coreOpacity: 0.6,          
+            
+            speedBase: 0.0008,
+            speedVariance: 0.0005,      
+            
+            // 辉光参数
+            bloomStrength: 1.3,        
+            bloomThreshold: 0.3,      
+            bloomRadius: 0.6,
+            
+            // 光子颜色板 - 暖色调 (绿/黄/红)
+            colors: [                  
+                new THREE.Color('#00ff44'), // 荧光绿
+                new THREE.Color('#ffff00'), // 钠黄
+                new THREE.Color('#ff3300'), // 激光红
+                new THREE.Color('#ffaa00'), // 橙色
+            ]
+        };
+
+        // --- 场景初始化 ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000510, 0.008); // 深蓝黑色雾气
+        scene.background = new THREE.Color(0x000510);    
+
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 300);
+        camera.position.set(0, 3.5, 25); 
+        camera.lookAt(0, 3.5, -50);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance", stencil: false, depth: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1.1; 
+        document.body.appendChild(renderer.domElement);
+
+        // --- 灯光系统 ---
+        const ambientLight = new THREE.AmbientLight(0x223355, 0.5); 
+        scene.add(ambientLight);
+
+        const topLight = new THREE.DirectionalLight(0xaaccff, 0.6); 
+        topLight.position.set(0, 20, -10);
+        scene.add(topLight);
+
+        const lightBlue = new THREE.PointLight(0x0044ff, 20, 60); 
+        lightBlue.position.set(15, 8, 10);
+        scene.add(lightBlue);
+
+        const lightPurple = new THREE.PointLight(0xaa00ff, 20, 60); 
+        lightPurple.position.set(-15, 8, 10);
+        scene.add(lightPurple);
+
+        // --- 后期处理 ---
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = CONFIG.bloomThreshold;
+        bloomPass.strength = CONFIG.bloomStrength;
+        bloomPass.radius = CONFIG.bloomRadius;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // --- Shader 注入 (修复版) ---
+        const globalUniforms = { uTime: { value: 0 } };
+        
+        const injectVertexShader = (shader) => {
+            shader.uniforms.uTime = globalUniforms.uTime;
+            shader.vertexShader = `uniform float uTime; varying float vProgress; \n${shader.vertexShader}`;
+            shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `
+                #include <begin_vertex>
+                float wave1 = sin(position.z * 0.1 + uTime * 1.5) * 1.5;
+                float wave2 = cos(position.x * 0.2 + uTime * 1.2) * 0.5;
+                float wave3 = sin(position.z * 0.3 + position.x * 0.5 + uTime * 2.0) * 0.2;
+                transformed.y += wave1 + wave2 + wave3;
+                vProgress = smoothstep(25.0, -90.0, position.z);
+            `);
+        };
+        
+        const injectFragmentShader = (shader) => {
+            shader.fragmentShader = `varying float vProgress; \n${shader.fragmentShader}`;
+            shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', `
+                #include <dithering_fragment>
+                float brightnessBoost = mix(1.0, 1.4, vProgress); 
+                vec3 distantTone = vec3(0.8, 0.9, 1.0); 
+                vec3 finalColor = mix(gl_FragColor.rgb, distantTone * gl_FragColor.rgb, vProgress * 0.5);
+                gl_FragColor.rgb = finalColor * brightnessBoost;
+                gl_FragColor.a = mix(gl_FragColor.a, 0.9, vProgress * 0.5);
+            `);
+        };
+
+        // --- 材质工厂 ---
+        const glassMaterial = new THREE.MeshPhongMaterial({
+            color: CONFIG.glassColor,
+            transparent: true,
+            opacity: CONFIG.glassOpacity,
+            shininess: 300,            
+            specular: 0xffffff,        
+            side: THREE.FrontSide,     
+            blending: THREE.AdditiveBlending, 
+            depthWrite: false          
+        });
+        glassMaterial.onBeforeCompile = injectVertexShader; 
+
+        const createCoreMaterial = (t) => { 
+            const hue = THREE.MathUtils.lerp(0.78, 0.6, t);
+            const color = new THREE.Color().setHSL(hue, 0.9, 0.4); 
+            const emissive = new THREE.Color().setHSL(hue, 1.0, 0.3); 
+            
+            const mat = new THREE.MeshPhongMaterial({
+                color: color,
+                emissive: emissive,
+                emissiveIntensity: 0.6, 
+                transparent: true,
+                opacity: CONFIG.coreOpacity,
+                shininess: 150,         
+                specular: 0x88ccff,     
+                side: THREE.FrontSide,
+                depthWrite: false
+            });
+            
+            mat.onBeforeCompile = (shader) => {
+                injectVertexShader(shader);
+                injectFragmentShader(shader);
+            };
+            return mat;
+        };
+
+        const mainGroup = new THREE.Group();
+        scene.add(mainGroup);
+        const tubesSubGroup = new THREE.Group();
+        mainGroup.add(tubesSubGroup);
+
+        const curves = []; 
+        const rand = (min, max) => Math.random() * (max - min) + min;
+
+        for (let i = 0; i < CONFIG.fiberCount; i++) {
+            const t = (i / (CONFIG.fiberCount - 1)) * 2 - 1; 
+            const xBase = t * CONFIG.fiberRangeX + rand(-0.1, 0.1);
+            const yBase = 0;
+
+            const p0 = new THREE.Vector3(xBase, yBase - 2, 25);
+            const p1 = new THREE.Vector3(xBase, yBase, 0);
+            const p2 = new THREE.Vector3(xBase, yBase, -40);
+            const liftHeight = 70 + Math.pow(Math.abs(t), 2.5) * 40; 
+            const p3 = new THREE.Vector3(xBase * 1.8, yBase + liftHeight, -90);  
+
+            const curve = new THREE.CatmullRomCurve3([p0, p1, p2, p3]);
+            curve.tension = 0.5; 
+            curves.push(curve);
+
+            const tColor = i / (CONFIG.fiberCount - 1);
+            const coreMat = createCoreMaterial(tColor);
+
+            const outerGeo = new THREE.TubeGeometry(curve, CONFIG.tubeSegments, CONFIG.outerRadius, CONFIG.radialSegments, false);
+            const innerGeo = new THREE.TubeGeometry(curve, CONFIG.tubeSegments, CONFIG.innerRadius, CONFIG.radialSegments, false);
+            
+            const outerMesh = new THREE.Mesh(outerGeo, glassMaterial);
+            const innerMesh = new THREE.Mesh(innerGeo, coreMat);
+            
+            tubesSubGroup.add(outerMesh);
+            tubesSubGroup.add(innerMesh);
+        }
+
+        const sphereGeometry = new THREE.SphereGeometry(CONFIG.photonSize, 6, 6);
+        const photonMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+        const instancedPhotons = new THREE.InstancedMesh(sphereGeometry, photonMaterial, CONFIG.photonCount);
+        instancedPhotons.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        mainGroup.add(instancedPhotons);
+
+        const photonsData = [];
+        const dummy = new THREE.Object3D();
+        const tempColor = new THREE.Color(); // 用于动画中复用的临时颜色变量
+
+        for (let i = 0; i < CONFIG.photonCount; i++) {
+            const baseColor = CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)].clone();
+            // [修改] 基础亮度倍增至 4.0 (原 2.0)，实现“亮度增加一倍”
+            baseColor.multiplyScalar(4.0); 
+
+            photonsData.push({
+                curveIndex: Math.floor(Math.random() * CONFIG.fiberCount),
+                speed: rand(CONFIG.speedBase, CONFIG.speedBase + CONFIG.speedVariance),
+                progress: Math.random(), 
+                baseColor: baseColor, // 保存基础颜色
+                scalePhase: Math.random() * Math.PI * 2
+            });
+            // 初始颜色设置
+            instancedPhotons.setColorAt(i, baseColor);
+        }
+
+        let mouseX = 0, mouseY = 0;
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX - windowHalfX) * 0.02;
+            mouseY = (event.clientY - windowHalfY) * 0.02;
+        });
+
+        const clock = new THREE.Clock();
+        function getWaveHeight(x, z, time) {
+            return Math.sin(z * 0.1 + time * 1.5) * 1.5 + 
+                   Math.cos(x * 0.2 + time * 1.2) * 0.5 + 
+                   Math.sin(z * 0.3 + x * 0.5 + time * 2.0) * 0.2;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+            globalUniforms.uTime.value = time;
+
+            for (let i = 0; i < CONFIG.photonCount; i++) {
+                const data = photonsData[i];
+                const curve = curves[data.curveIndex];
+                
+                if (curve) {
+                    data.progress += data.speed;
+                    if (data.progress > 1) {
+                        data.progress = 0;
+                        let newIndex = data.curveIndex + Math.floor(Math.random() * 7) - 3;
+                        if (newIndex < 0) newIndex = 0;
+                        if (newIndex >= CONFIG.fiberCount) newIndex = CONFIG.fiberCount - 1;
+                        data.curveIndex = newIndex;
+                    }
+                    const position = curve.getPointAt(data.progress);
+                    const waveY = getWaveHeight(position.x, position.z, time);
+                    dummy.position.set(position.x, position.y + waveY, position.z);
+                    
+                    // --- 动态闪烁逻辑 ---
+                    // 计算脉冲因子 (0.0 ~ 1.0)
+                    const pulse = Math.sin(time * 8 + data.scalePhase) * 0.5 + 0.5;
+                    
+                    // 1. 大小随亮度变大： 基础大小 1.0 + 脉冲增益
+                    const sizePulse = 0.8 + pulse * 1.2; // 范围 0.8x ~ 2.0x
+                    
+                    // 距离增益 (远处变大)
+                    const progressSmooth = Math.pow(data.progress, 2.0); 
+                    const distBoost = 1.0 + progressSmooth * 0.8; 
+                    
+                    dummy.scale.setScalar(sizePulse * distBoost);
+                    dummy.updateMatrix();
+                    instancedPhotons.setMatrixAt(i, dummy.matrix);
+
+                    // 2. 亮度随脉冲变化
+                    // 使用 tempColor 复用内存
+                    tempColor.copy(data.baseColor);
+                    // 亮度范围：基础亮度 * (0.5 ~ 1.5)
+                    const brightnessScale = 0.5 + pulse * 1.0; 
+                    tempColor.multiplyScalar(brightnessScale);
+                    
+                    instancedPhotons.setColorAt(i, tempColor);
+                }
+            }
+            
+            // 标记矩阵和颜色都需要更新
+            instancedPhotons.instanceMatrix.needsUpdate = true;
+            instancedPhotons.instanceColor.needsUpdate = true;
+
+            camera.position.x += (mouseX * 0.1 - camera.position.x) * 0.02;
+            camera.position.y += (3.5 + (-mouseY * 0.02) - camera.position.y) * 0.05;
+            camera.lookAt(0, camera.position.y, -60);
+
+            composer.render();
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+        animate();
+    </script>
+</body>
+</html>

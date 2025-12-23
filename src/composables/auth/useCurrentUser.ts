@@ -1,5 +1,5 @@
 import { whenever } from '@vueuse/core'
-import { computed, watch } from 'vue'
+import { computed, watch, ref } from 'vue'
 
 import { useFirebaseAuthActions } from '@/composables/auth/useFirebaseAuthActions'
 import { t } from '@/i18n'
@@ -18,8 +18,13 @@ export const useCurrentUser = () => {
 
   const firebaseUser = computed(() => authStore.currentUser)
   const isApiKeyLogin = computed(() => apiKeyStore.isAuthenticated)
+  
+  // Custom Auth Logic
+  const checkComfyAuthCookie = () => document.cookie.split(';').some((item) => item.trim().startsWith('comfy_auth='))
+  const isCustomAuth = ref(checkComfyAuthCookie())
+
   const isLoggedIn = computed(
-    () => !!isApiKeyLogin.value || firebaseUser.value !== null
+    () => !!isApiKeyLogin.value || firebaseUser.value !== null || isCustomAuth.value
   )
 
   const resolvedUserInfo = computed<AuthUserInfo | null>(() => {
@@ -29,6 +34,10 @@ export const useCurrentUser = () => {
 
     if (firebaseUser.value) {
       return { id: firebaseUser.value.uid }
+    }
+    
+    if (isCustomAuth.value) {
+        return { id: 'custom-user' }
     }
 
     return null
@@ -50,6 +59,9 @@ export const useCurrentUser = () => {
     if (isApiKeyLogin.value) {
       return apiKeyStore.currentUser?.name
     }
+    if (isCustomAuth.value) {
+        return "User" // Default display name for custom auth
+    }
     return firebaseUser.value?.displayName
   })
 
@@ -57,12 +69,19 @@ export const useCurrentUser = () => {
     if (isApiKeyLogin.value) {
       return apiKeyStore.currentUser?.email
     }
+    if (isCustomAuth.value) {
+        return "local@comfy.ui"
+    }
     return firebaseUser.value?.email
   })
 
   const providerName = computed(() => {
     if (isApiKeyLogin.value) {
       return 'Comfy API Key'
+    }
+    
+    if (isCustomAuth.value) {
+        return 'Local Auth'
     }
 
     const providerId = firebaseUser.value?.providerData[0]?.providerId
@@ -78,6 +97,10 @@ export const useCurrentUser = () => {
   const providerIcon = computed(() => {
     if (isApiKeyLogin.value) {
       return 'pi pi-key'
+    }
+    
+    if (isCustomAuth.value) {
+        return 'pi pi-lock'
     }
 
     const providerId = firebaseUser.value?.providerData[0]?.providerId
@@ -95,18 +118,34 @@ export const useCurrentUser = () => {
       return false
     }
 
+    if (isCustomAuth.value) {
+        return false
+    }
+
     const providerId = firebaseUser.value?.providerData[0]?.providerId
     return providerId === 'password'
   })
 
   const userPhotoUrl = computed(() => {
     if (isApiKeyLogin.value) return null
+    if (isCustomAuth.value) return null
     return firebaseUser.value?.photoURL
   })
 
   const handleSignOut = async () => {
     if (isApiKeyLogin.value) {
       await apiKeyStore.clearStoredApiKey()
+    } else if (isCustomAuth.value) {
+        // Custom Logout Logic
+        try {
+            await fetch('/logout', { method: 'POST' });
+            // Clear local state
+            isCustomAuth.value = false;
+            // Redirect to login page
+            window.location.href = '/login.html';
+        } catch (e) {
+            console.error("Logout failed", e);
+        }
     } else {
       await commandStore.execute('Comfy.User.SignOut')
     }

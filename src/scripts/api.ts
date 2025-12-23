@@ -50,6 +50,7 @@ import type { useFirebaseAuthStore } from '@/stores/firebaseAuthStore'
 import type { AuthHeader } from '@/types/authTypes'
 import type { NodeExecutionId } from '@/types/nodeIdentification'
 import { fetchHistory } from '@/platform/remote/comfyui/history'
+import { encryptData } from '@/utils/crypto'
 
 interface QueuePromptRequestBody {
   client_id: string
@@ -419,6 +420,21 @@ export class ComfyApi extends EventTarget {
           addHeaderEntry(headers, key, value)
         }
       }
+    } else {
+        // Encrypt payload if secret exists and method is POST/PUT
+        if (
+            ['POST', 'PUT'].includes(options?.method?.toUpperCase() ?? '') &&
+            options?.body &&
+            typeof options.body === 'string'
+        ) {
+            // Placeholder for secret retrieval - in a real app this should be secure
+            const secret = localStorage.getItem('comfy_api_secret')
+            if (secret) {
+                const encrypted = encryptData(JSON.parse(options.body), secret)
+                options.body = JSON.stringify({ data: encrypted })
+                addHeaderEntry(headers, 'X-Comfy-Encrypted', '1')
+            }
+        }
     }
 
     addHeaderEntry(headers, 'Comfy-User', this.user)

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内部服务门户 | 登录</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* 自定义字体 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* --- 核心样式：增强版毛玻璃效果 --- */
+        .glass-panel {
+            /* 渐变背景模拟光照反射，增加立体感 */
+            background: linear-gradient(
+                135deg, 
+                rgba(255, 255, 255, 0.15) 0%, 
+                rgba(255, 255, 255, 0.05) 100%
+            );
+            /* 强力背景模糊 */
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            /* 细腻的半透明边框 */
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-top: 1px solid rgba(255, 255, 255, 0.3); /* 顶部高光 */
+            border-left: 1px solid rgba(255, 255, 255, 0.3); /* 左侧高光 */
+            /* 柔和阴影 */
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* 输入框样式：深色玻璃感 */
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .glass-input:focus-within {
+            background: rgba(0, 0, 0, 0.4);
+            border-color: rgba(16, 185, 129, 0.6); /* 聚焦时的翠绿色边框 */
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        }
+
+        /* 登录按钮渐变动画 */
+        .btn-gradient {
+            background-size: 200% auto;
+            transition: 0.5s;
+        }
+        .btn-gradient:hover {
+            background-position: right center;
+        }
+
+        /* 视图切换动画 */
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white overflow-hidden h-screen w-screen selection:bg-emerald-500 selection:text-white">
+    <div id="app" class="h-full w-full relative">
+        
+        <!-- 1. 背景层 (Background Wallpaper) -->
+        <div class="absolute inset-0 z-0 overflow-hidden">
+            <!-- Background Animation: FlowLight (HTML Script) -->
+            <iframe 
+                src="/usersocket/animations/flowlight.html" 
+                class="w-full h-full border-0 absolute inset-0 z-0"
+                style="pointer-events: none;"
+                title="Background Animation"
+            ></iframe>
+            
+            <!-- 遮罩层：比之前稍微透明一点，让背景色彩透出来 -->
+            <div class="absolute inset-0 bg-gray-900/40"></div>
+            
+            <!-- 装饰性光斑 (可选，增加科技氛围) -->
+            <div class="absolute top-[-10%] left-[-10%] w-1/2 h-1/2 bg-blue-500/20 rounded-full blur-[100px]"></div>
+            <div class="absolute bottom-[-10%] right-[-10%] w-1/2 h-1/2 bg-purple-500/20 rounded-full blur-[100px]"></div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="relative z-10 h-full flex items-center justify-center p-4">
+            
+            <transition name="fade" mode="out-in">
+                <!-- 登录界面 -->
+                <div v-if="!isLoggedIn" key="login" class="glass-panel rounded-2xl p-3 flex flex-col md:flex-row max-w-[900px] w-full md:h-[550px] shadow-2xl">
+                    
+                    <!-- 2. 左侧装饰图 (UIpaper) -->
+                    <div class="hidden md:block w-[45%] h-full relative rounded-xl overflow-hidden shadow-inner group">
+                        <img src="/UIpaper.webp" alt="UI Paper" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110">
+                        <!-- 图片上的文字覆盖层 -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8">
+                            <div class="transform transition-transform duration-500 group-hover:-translate-y-2">
+                                <h2 class="text-3xl font-bold text-white mb-2 tracking-tight">Flow Design</h2>
+                                <div class="w-12 h-1 bg-emerald-500 rounded mb-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 移动端顶部图片 -->
+                    <div class="md:hidden h-32 w-full relative rounded-t-xl overflow-hidden shrink-0">
+                         <img src="UIpaper.webp" alt="UI Paper" class="w-full h-full object-cover">
+                         <div class="absolute inset-0 bg-black/30"></div>
+                    </div>
+
+                    <!-- 3. 右侧登录表单 -->
+                    <div class="flex-1 p-8 md:p-12 flex flex-col justify-center">
+                        
+                        <div class="mb-8">
+                            <h1 class="text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-md">Welcome!</h1>
+                            <p class="text-gray-300 text-sm font-light">请输入凭证访问内部服务</p>
+                        </div>
+
+                        <form @submit.prevent="handleLogin" class="space-y-5">
+                            
+                            <!-- 用户名 -->
+                            <div class="glass-input rounded-xl flex items-center p-1 group">
+                                <div class="p-3 text-gray-400 group-focus-within:text-emerald-400 transition-colors">
+                                    <i data-lucide="user" class="h-5 w-5"></i>
+                                </div>
+                                <input 
+                                    v-model="username"
+                                    type="text" 
+                                    placeholder="@username" 
+                                    class="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 px-2 py-2 outline-none h-full"
+                                    required
+                                >
+                            </div>
+
+                            <!-- 密码 -->
+                            <div class="glass-input rounded-xl flex items-center p-1 group">
+                                <div class="p-3 text-gray-400 group-focus-within:text-emerald-400 transition-colors">
+                                    <i data-lucide="lock" class="h-5 w-5"></i>
+                                </div>
+                                <input 
+                                    v-model="password"
+                                    type="password" 
+                                    placeholder="Password" 
+                                    class="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 px-2 py-2 outline-none h-full"
+                                    required
+                                >
+                            </div>
+                            
+                            <!-- Error Message -->
+                            <div v-if="errorMsg" class="text-red-400 text-sm text-center font-medium bg-red-900/20 p-2 rounded-lg border border-red-500/20">
+                                {{ errorMsg }}
+                            </div>
+
+                            <div class="flex justify-between items-center text-xs text-gray-400 px-1">
+                                <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition">
+                                    <input type="checkbox" class="rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500/50">
+                                    <span>Remember me</span>
+                                </label>
+                                <a href="#" class="hover:text-emerald-400 transition-colors">Forgot Password?</a>
+                            </div>
+
+                            <!-- 登录按钮 -->
+                            <button 
+                                type="submit" 
+                                class="w-full bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 btn-gradient text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-500/20 transform transition active:scale-[0.98] mt-4"
+                                :disabled="loading"
+                            >
+                                <span v-if="loading" class="flex items-center justify-center space-x-2">
+                                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Verifying...</span>
+                                </span>
+                                <span v-else>LOGIN ACCESS</span>
+                            </button>
+
+                        </form>
+
+                        <div class="mt-8 pt-6 border-t border-white/10 flex justify-between items-center text-xs text-gray-500">
+                            <span>&copy; 2024 Secure System</span>
+                            <div class="flex items-center gap-1">
+                                <i data-lucide="shield-check" class="h-3 w-3 text-emerald-500"></i>
+                                <span>SSL Encrypted</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 登录后的内部服务视图 -->
+                <div v-else key="service" class="w-full h-full flex flex-col glass-panel rounded-none md:rounded-xl overflow-hidden border-0">
+                    <!-- 顶部状态栏 -->
+                    <div class="h-12 bg-black/60 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-4 shrink-0">
+                        <div class="flex items-center space-x-2">
+                            <div class="flex space-x-1.5 mr-4">
+                                <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                                <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                                <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs text-gray-400 font-mono hidden sm:inline">User: {{ username }}</span>
+                            <button @click="logout" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-red-400" title="Logout">
+                                <i data-lucide="log-out" class="h-4 w-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Iframe 容器 -->
+                    <div class="flex-1 relative bg-white">
+                        <!-- 加载动画 -->
+                        <div v-if="iframeLoading" class="absolute inset-0 flex items-center justify-center bg-gray-50 z-20">
+                            <div class="text-center">
+                                <div class="w-10 h-10 border-4 border-emerald-500/30 border-t-emerald-600 rounded-full animate-spin mx-auto mb-3"></div>
+                                <p class="text-gray-400 text-xs font-mono uppercase tracking-widest">Establishing Secure Tunnel...</p>
+                            </div>
+                        </div>
+
+                        <iframe 
+                            src="/" 
+                            class="w-full h-full border-0"
+                            @load="handleIframeLoad"
+                            @error="handleIframeError"
+                        ></iframe>
+
+                        <!-- 连接失败提示 (预览环境专用) -->
+                        <div v-if="iframeError" class="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                             <div class="bg-white/95 backdrop-blur shadow-2xl p-8 rounded-2xl max-w-sm text-center border border-gray-100 pointer-events-auto transform transition-all hover:scale-105">
+                                <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i data-lucide="server-off" class="h-8 w-8 text-red-500"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900 mb-2">无法连接至本地服务</h3>
+                                <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+                                    由于浏览器安全策略，Web 预览环境无法直接访问您的 <code class="bg-gray-100 px-1 py-0.5 rounded text-gray-700">127.0.0.1</code> 端口。
+                                </p>
+                                <div class="space-y-3">
+                                    <a href="http://127.0.0.1:7878" target="_blank" class="block w-full bg-emerald-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-emerald-700 transition shadow-lg shadow-emerald-500/30">
+                                        在新窗口打开服务
+                                    </a>
+                                    <button @click="iframeError = false" class="text-xs text-gray-400 hover:text-gray-600 underline">
+                                        暂时忽略并继续
+                                    </button>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const username = ref('');
+                const password = ref('');
+                const loading = ref(false);
+                const isLoggedIn = ref(false);
+                const errorMsg = ref('');
+
+                // Check initial login state
+                onMounted(() => {
+                    lucide.createIcons();
+                });
+
+                const handleLogin = async () => {
+                    loading.value = true;
+                    errorMsg.value = '';
+                    
+                    try {
+                        const response = await fetch('/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                username: username.value,
+                                password: password.value
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok && data.status === 'success') {
+                            isLoggedIn.value = true;
+                            // Save username for Lock Screen
+                            localStorage.setItem('comfy_username', username.value);
+                            // Wait for transition before reload or redirect
+                            setTimeout(() => {
+                                window.location.href = '/';
+                            }, 800);
+                        } else {
+                            errorMsg.value = data.message || 'Login failed';
+                        }
+                    } catch (error) {
+                        errorMsg.value = 'Network error. Please try again.';
+                        console.error('Login error:', error);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                return {
+                    username,
+                    password,
+                    loading,
+                    isLoggedIn,
+                    errorMsg,
+                    handleLogin
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

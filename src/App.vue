@@ -5,6 +5,7 @@
     class="absolute inset-0 flex h-[unset] items-center justify-center"
   />
   <GlobalDialog />
+  <LockScreen />
   <BlockUI full-screen :blocked="isLoading" />
 </template>
 
@@ -14,6 +15,7 @@ import BlockUI from 'primevue/blockui'
 import ProgressSpinner from 'primevue/progressspinner'
 import { computed, onMounted } from 'vue'
 
+import LockScreen from '@/components/auth/LockScreen.vue'
 import GlobalDialog from '@/components/dialog/GlobalDialog.vue'
 import config from '@/config'
 import { t } from '@/i18n'

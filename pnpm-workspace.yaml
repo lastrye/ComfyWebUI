@@ -33,6 +33,7 @@ catalog:
   '@storybook/vue3-vite': ^10.1.9
   '@tailwindcss/vite': ^4.1.12
   '@trivago/prettier-plugin-sort-imports': ^5.2.0
+  '@types/crypto-js': ^4.2.2
   '@types/fs-extra': ^11.0.4
   '@types/jsdom': ^21.1.7
   '@types/node': ^24.1.0
@@ -49,6 +50,7 @@ catalog:
   axios: ^1.8.2
   cross-env: ^10.1.0
   cva: 1.0.0-beta.4
+  crypto-js: ^4.2.0
   dotenv: ^16.4.5
   eslint: ^9.39.1
   eslint-config-prettier: ^10.1.8

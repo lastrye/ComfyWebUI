@@ -1126,6 +1126,7 @@
     "instantTooltip": "工作流将会在生成完成后立即执行",
     "interrupt": "取消当前任务",
     "light": "淺色",
+    "lock": "锁定",
     "manageExtensions": "管理扩展功能",
     "onChange": "更改时",
     "onChangeTooltip": "一旦进行更改，工作流将添加到执行队列",
